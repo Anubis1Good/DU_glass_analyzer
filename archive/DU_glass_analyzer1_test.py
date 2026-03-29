@@ -415,9 +415,12 @@ def get_table_for_period(df, minutes, count_threshold=2, top_n=5):
 
 
 # Загрузка и подготовка данных
-TOP_N = 4
+TOP_N = 3
 COUNT_THRESHOLD = 10
-tickers_stock = ('GAZP','SBER','LKOH','YDEX','IMOEXF','MMM6')
+tickers_stock = ('GAZP','SBER','LKOH','YDEX','OZON','PHOR','AFLT','MTSS','PIKK')
+tickers_stock2 = ('T','VTBR','NVTK','TRNFP','ROSN','TATN','SIBN','SNGSP','IRAO','AFKS')
+tickers_stock3 = ('CHMF','NLMK','MAGN','MGNT','X5','GMKN','RUAL','MTLR','PLZL','ALRS')
+tickers_fut = ('IMOEXF','MMM6','BMK6','S1M6','GLDRUBF')
 tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNYRUB_TOD','SiM6','CRM6')
 # tickers_stock = ('GAZP','SBER','LKOH','YDEX')
 # tickers_currency = ('IMOEXF','MMM6')
@@ -425,29 +428,33 @@ tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNYRUB_TOD','SiM6','CRM6')
 
 while True:
     ticks = get_all_ticks()
+    print(ticks)
     df = pd.DataFrame(ticks['data'])
     df['datetime'] = df['datetime'].apply(parse_datetime)
     df['tick'] = np.where(df['flags'] == 1025, -df['qty'], df['qty'])
     df1 = df[df['sec_code'].isin(tickers_stock)].copy()
-    df2 = df[df['sec_code'].isin(tickers_currency)].copy()
+    df2 = df[df['sec_code'].isin(tickers_stock2)].copy()
+    df3 = df[df['sec_code'].isin(tickers_stock3)].copy()
+    df4 = df[df['sec_code'].isin(tickers_fut)].copy()
+    df5 = df[df['sec_code'].isin(tickers_currency)].copy()
     # df.info()
 
     # Параметры
 
     # Получение таблиц
     # print(f"\nGenerating tables (top {TOP_N} ticks per sec_code, count > {COUNT_THRESHOLD})...")
-    table_10min = get_table_for_period(df1, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
-    table_1hour = get_table_for_period(df1, minutes=60, count_threshold=60, top_n=TOP_N)
-    table_8hour = get_table_for_period(df1, minutes=60*8, count_threshold=60*8, top_n=TOP_N)
-
+    table_10min1 = get_table_for_period(df1, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
     table_10min2 = get_table_for_period(df2, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
-    table_1hour2 = get_table_for_period(df2, minutes=60, count_threshold=60, top_n=TOP_N)
+    table_10min3 = get_table_for_period(df3, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
+
+    table_10min4 = get_table_for_period(df4, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
+    table_10min5 = get_table_for_period(df5, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
     
     # Для Windows
     os.system('cls')
     # Выводим выровненные таблицы
     print(datetime.now())
-    print_aligned_tables(table_10min, table_1hour,table_8hour,table_10min2,table_1hour2, titles=["LAST 10 MINUTES", "LAST HOUR","LAST 8 HOUR","LAST 10 MINUTES", "LAST HOUR"], top_n=TOP_N,groups=[[0, 1, 2], [3, 4]])
+    print_aligned_tables(table_10min1, table_10min2,table_10min3,table_10min4,table_10min5, titles=["LAST 10 MINUTES", "LAST 10 MINUTES","LAST 10 MINUTES","LAST 10 MINUTES", "LAST 10 MINUTES"], top_n=TOP_N,groups=[[0],[1],[2],[3],[4]])
 
     # # Выводим статистику
     # # print_detailed_stats(table_10min, table_1hour)
