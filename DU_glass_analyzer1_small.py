@@ -437,7 +437,7 @@ TOP_N = 5
 COUNT_THRESHOLD = 5
 # tickers_stock = ('GAZP','SBER','LKOH','YDEX','IMOEXF','MMM6')
 # tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNY000000TOD','SiM6','CRM6')
-tickers_fut = ('CNYRUBF','CRM6',)
+tickers_fut = ('CNYRUBF','CRM6','SiM6','USDRUBF')
 tickers_currency = ('CNYRUB_TOM','CNY000000TOD')
 
 # from time import time
