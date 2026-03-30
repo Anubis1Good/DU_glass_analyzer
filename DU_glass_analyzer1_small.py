@@ -1,11 +1,11 @@
 import os
-from time import sleep
+from time import sleep,time
 import pandas as pd
 import numpy as np
+import traceback
 from datetime import datetime, timedelta
 from tabulate import tabulate
-from utils.quik_funcs import get_all_ticks
-
+from libs.QuikPy import QuikPy
 
 
 
@@ -412,46 +412,69 @@ def get_table_for_period(df, minutes, count_threshold=2, top_n=5):
     
     return result
 
+def on_tick(tick):
+    global df
+    tick = tick['data']
+    new_row = {
+        'datetime': parse_datetime(tick['datetime']),
+        'flags': tick['flags'],
+        'qty': tick['qty'],
+        'sec_code': tick['sec_code'],
+        'tick': np.where(tick['flags'] == 1025, -tick['qty'], tick['qty'])
+    }
+    new_df_row = pd.DataFrame([new_row])
+    df = pd.concat([df, new_df_row], ignore_index=True)
+    df['flags'] = df['flags'].astype('int64')
+    df['qty'] = df['qty'].astype('float64')
+    df['tick'] = df['tick'].astype('float64')
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    time_threshold = last_time - timedelta(hours=1)
+    df = df[df['datetime'] >= time_threshold].copy()
 
 
 # Загрузка и подготовка данных
-TOP_N = 4
-COUNT_THRESHOLD = 10
-tickers_stock = ('GAZP','SBER','LKOH','YDEX','IMOEXF','MMM6')
-tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNYRUB_TOD','SiM6','CRM6')
-# tickers_stock = ('GAZP','SBER','LKOH','YDEX')
-# tickers_currency = ('IMOEXF','MMM6')
+TOP_N = 5
+COUNT_THRESHOLD = 5
+# tickers_stock = ('GAZP','SBER','LKOH','YDEX','IMOEXF','MMM6')
+# tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNY000000TOD','SiM6','CRM6')
+tickers_fut = ('CNYRUBF','CRM6',)
+tickers_currency = ('CNYRUB_TOM','CNY000000TOD')
 
+# from time import time
 
-while True:
-    ticks = get_all_ticks()
+try:
+    qp_provider = QuikPy()
+    ticks = qp_provider.get_all_trade()
+    # df = pd.DataFrame(columns=['flags','datetime','sec_code','qty','tick'])
     df = pd.DataFrame(ticks['data'])
+    df = df.drop(['class_code','exec_market','repoterm','tradenum','yield','trade_num','value','period','benchmark','reporate','exchange_code','open_interest','accruedint','repo2value','repovalue','settlecode','price','seccode'],axis=1)
     df['datetime'] = df['datetime'].apply(parse_datetime)
     df['tick'] = np.where(df['flags'] == 1025, -df['qty'], df['qty'])
-    df1 = df[df['sec_code'].isin(tickers_stock)].copy()
-    df2 = df[df['sec_code'].isin(tickers_currency)].copy()
-    # df.info()
+    last_time = df['datetime'].max()
+    time_threshold = last_time - timedelta(hours=1)
+    df = df[df['datetime'] >= time_threshold].copy()
+    df.info()
+    qp_provider.on_all_trade = on_tick
 
-    # Параметры
+    while True:
+        df_c = df.copy()
+        df1 = df_c[df_c['sec_code'].isin(tickers_fut)].copy()
+        df2 = df_c[df_c['sec_code'].isin(tickers_currency)].copy()
+        
+        table_10min = get_table_for_period(df1, minutes=5, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
+        table_1hour = get_table_for_period(df1, minutes=60, count_threshold=60, top_n=TOP_N)
 
-    # Получение таблиц
-    # print(f"\nGenerating tables (top {TOP_N} ticks per sec_code, count > {COUNT_THRESHOLD})...")
-    table_10min = get_table_for_period(df1, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
-    table_1hour = get_table_for_period(df1, minutes=60, count_threshold=60, top_n=TOP_N)
-    table_8hour = get_table_for_period(df1, minutes=60*8, count_threshold=60*8, top_n=TOP_N)
+        table_10min2 = get_table_for_period(df2, minutes=5, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
+        table_1hour2 = get_table_for_period(df2, minutes=60, count_threshold=60, top_n=TOP_N)
+        
+        # Для Windows
+        os.system('cls')
+        # Выводим выровненные таблицы
+        print(datetime.now())
+        print_aligned_tables(table_10min, table_1hour,table_10min2,table_1hour2, titles=["LAST 5 MINUTES", "LAST HOUR","LAST 5 MINUTES", "LAST HOUR"], top_n=TOP_N,groups=[[0, 1], [2, 3]])
+        
 
-    table_10min2 = get_table_for_period(df2, minutes=10, count_threshold=COUNT_THRESHOLD, top_n=TOP_N)
-    table_1hour2 = get_table_for_period(df2, minutes=60, count_threshold=60, top_n=TOP_N)
-    
-    # Для Windows
-    os.system('cls')
-    # Выводим выровненные таблицы
-    print(datetime.now())
-    print_aligned_tables(table_10min, table_1hour,table_8hour,table_10min2,table_1hour2, titles=["LAST 10 MINUTES", "LAST HOUR","LAST 8 HOUR","LAST 10 MINUTES", "LAST HOUR"], top_n=TOP_N,groups=[[0, 1, 2], [3, 4]])
-
-    # # Выводим статистику
-    # # print_detailed_stats(table_10min, table_1hour)
-    # # Сохраняем выровненные версии для анализа
-    # aligned_10min, aligned_1hour = align_tables_by_sec_code(table_10min, table_1hour, TOP_N)
-    sleep(60)
-
+        sleep(30)
+except Exception:
+    traceback.print_exc()
+    qp_provider.close_connection_and_thread() 
