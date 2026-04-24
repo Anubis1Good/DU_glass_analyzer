@@ -132,12 +132,13 @@ def on_tick(tick):
 
 qp_provider.on_all_trade = on_tick
 
-tickers_stock = ('GAZP','SBER','SBERP','LKOH','YDEX','OZON','PHOR','AFLT','MTSS','PIKK')
-tickers_stock2 = ('T','VTBR','NVTK','TRNFP','ROSN','TATN','SIBN','SNGSP','IRAO','AFKS')
-tickers_stock3 = ('CHMF','NLMK','MAGN','MGNT','X5','GMKN','RUAL','MTLR','PLZL','ALRS')
+tickers_stock = ('GAZP','SBER','LKOH','YDEX','IMOEXF','MMM6')
+# tickers_stock = ('GAZP','SBER','SBERP','LKOH','YDEX','OZON','PHOR','AFLT','MTSS','PIKK')
+# tickers_stock2 = ('T','VTBR','NVTK','TRNFP','ROSN','TATN','SIBN','SNGSP','IRAO','AFKS')
+# tickers_stock3 = ('CHMF','NLMK','MAGN','MGNT','X5','GMKN','RUAL','MTLR','PLZL','ALRS')
 tickers_currency = ('CNYRUBF','CNYRUB_TOM','CNY000000TOD','SiM6','CRM6','USDRUBF')
 
-TOP_N = 2
+TOP_N = 4
 COUNT_THRESHOLD = 5
 
 try:
@@ -145,24 +146,26 @@ try:
         try:
             # Создаем копии с проверкой наличия данных
             df1 = df[df['sec_code'].isin(tickers_stock)].copy() if not df.empty else pd.DataFrame()
-            df2 = df[df['sec_code'].isin(tickers_stock2)].copy() if not df.empty else pd.DataFrame()
-            df3 = df[df['sec_code'].isin(tickers_stock3)].copy() if not df.empty else pd.DataFrame()
+            # df2 = df[df['sec_code'].isin(tickers_stock2)].copy() if not df.empty else pd.DataFrame()
+            # df3 = df[df['sec_code'].isin(tickers_stock3)].copy() if not df.empty else pd.DataFrame()
             df5 = df[df['sec_code'].isin(tickers_currency)].copy() if not df.empty else pd.DataFrame()
             
             # Безопасно приводим типы для всех датафреймов
             df1 = safe_convert_dataframe(df1)
-            df2 = safe_convert_dataframe(df2)
-            df3 = safe_convert_dataframe(df3)
+            # df2 = safe_convert_dataframe(df2)
+            # df3 = safe_convert_dataframe(df3)
             df5 = safe_convert_dataframe(df5)
             
             tt1 = get_table_ticks(df1, COUNT_THRESHOLD, TOP_N) if not df1.empty else pd.DataFrame()
-            tt2 = get_table_ticks(df2, COUNT_THRESHOLD, TOP_N) if not df2.empty else pd.DataFrame()
-            tt3 = get_table_ticks(df3, COUNT_THRESHOLD, TOP_N) if not df3.empty else pd.DataFrame()
+            # tt2 = get_table_ticks(df2, COUNT_THRESHOLD, TOP_N) if not df2.empty else pd.DataFrame()
+            # tt3 = get_table_ticks(df3, COUNT_THRESHOLD, TOP_N) if not df3.empty else pd.DataFrame()
             tt5 = get_table_ticks(df5, COUNT_THRESHOLD, 4) if not df5.empty else pd.DataFrame()
             
             tables = []
-            table_names = ['STOCKS', 'STOCKS2', 'STOCKS3', 'CURRENCY']
-            dfs_result = [tt1, tt2, tt3, tt5]
+            # table_names = ['STOCKS', 'STOCKS2', 'STOCKS3', 'CURRENCY']
+            table_names = ['STOCKS', 'CURRENCY']
+            # dfs_result = [tt1, tt2, tt3, tt5]
+            dfs_result = [tt1, tt5]
             
             for name, df_ in zip(table_names, dfs_result):
                 df_clean = drop_rank_if_exists(df_)
